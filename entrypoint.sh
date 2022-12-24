@@ -55,6 +55,8 @@ else
 \$dolibarr_nocsrfcheck='${DOLI_NO_CSRF_CHECK:="0"}';
 \$dolibarr_main_cookie_cryptkey='$(openssl rand -hex 32)';
 \$dolibarr_mailing_limit_sendbyweb='0';
+define('MAIN_ANTIVIRUS_COMMAND', '/usr/bin/clamdscan');
+define('MAIN_ANTIVIRUS_PARAM', '--fdpass');
 
 ENDFILE
 	fi
@@ -221,5 +223,12 @@ EOF
 		echo "${DOLI_DB_TYPE} is not supported by this install script"
 	fi
 fi
+
+[[ "x${DOLI_REDIS_HOST}" != "x" ]] && { 
+    echo 'session.save_handler = redis';
+    echo "session.save_path = ${DOLI_REDIS_HOST}";
+} >> /usr/local/etc/php/conf.d/docker-php-ext-redis.ini
+
+freshclam --log=/proc/self/fd/1 &
 
 exec "$@"

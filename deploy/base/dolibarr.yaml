@@ -27,6 +27,21 @@ spec:
     requests:
       storage: 5Gi
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app.kubernetes.io/instance: dolibarr-dolibarr
+    app.kubernetes.io/name: dolibarr
+    app.kubernetes.io/component: clamav
+  name: dolibarr-clamav
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -96,6 +111,9 @@ spec:
       - name: documents
         persistentVolumeClaim:
           claimName: dolibarr
+      - name: clamav
+        persistentVolumeClaim:
+          claimName: dolibarr-clamav
 #      - name: php-lock
 #        emptyDir: {}
       - name: nginx-run
@@ -109,7 +127,7 @@ spec:
           name: dolibarr-nginx-config
       containers:
       - name: dolibarr
-        image: registry:80/dolibarr:17.0
+        image: ghcr.io/sebt3/dolibarr:16.0.3
         volumeMounts:
 #          - name: php-lock
 #            mountPath: /var/lock
@@ -117,10 +135,12 @@ spec:
             mountPath: /var/www/
           - name: documents
             mountPath: /var/documents
-#        securityContext:
-#          runAsGroup: 82
-#          runAsNonRoot: true
-#          runAsUser: 82
+          - name: clamav
+            mountPath: /var/lib/clamav
+        securityContext:
+          runAsGroup: 82
+          runAsNonRoot: true
+          runAsUser: 82
         env:
         - name: DOLI_ADMIN_LOGIN
           valueFrom:
@@ -153,6 +173,45 @@ spec:
           - name: nginx-config
             mountPath: /etc/nginx/nginx.conf
             subPath: nginx.conf
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/instance: dolibarr-dolibarr
+    app.kubernetes.io/name: dolibarr
+    app.kubernetes.io/component: clamav
+  name: dolibarr-clamav
+spec:
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: dolibarr-dolibarr
+        app.kubernetes.io/name: dolibarr
+        app.kubernetes.io/component: clamav
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - command:
+            - /usr/bin/freshclam
+            - --log=/proc/self/fd/1
+            image: ghcr.io/sebt3/dolibarr:16.0.3
+            imagePullPolicy: IfNotPresent
+            name: dolibarr-clamav
+            securityContext:
+              runAsGroup: 82
+              runAsNonRoot: true
+              runAsUser: 82
+            volumeMounts:
+            - name: clamav
+              mountPath: /var/lib/clamav
+          volumes:
+          - name: clamav
+            persistentVolumeClaim:
+              claimName: dolibarr-clamav
+  schedule: 0 4 * * 0
 ---
 apiVersion: v1
 kind: Service

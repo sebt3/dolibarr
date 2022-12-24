@@ -1,17 +1,19 @@
 #ARG PHP_TAG=8.2.0-fpm-alpine3.17
 ARG PHP_TAG=7.4-fpm-alpine3.16
 FROM docker.io/library/php:${PHP_TAG} as build
-# hadolint ignore=DL3018,DL3019
-RUN apk --update --no-cache --no-progress add curl freshclam imagemagick freetype icu-libs icu-data-full libgomp libzip oniguruma krb5-server-ldap krb5-libs c-client libldap libpng libjpeg-turbo rsync ssmtp shadow mysql-client postgresql-client postgresql-libs \
+# hadolint ignore=DL3018,DL3019,SC2086
+RUN apk --update --no-cache --no-progress add curl ca-certificates clamav-clamdscan freshclam imagemagick freetype icu-libs icu-data-full libgomp libzip oniguruma krb5-server-ldap krb5-libs c-client libldap libpng libjpeg-turbo rsync ssmtp shadow mysql-client postgresql-client postgresql-libs pcre-dev \
  && apk --update --no-cache --no-progress add --virtual build-deps ${PHPIZE_DEPS} imagemagick-dev libzip-dev oniguruma-dev krb5-dev openldap-dev autoconf curl-dev freetype-dev build-base  icu-dev libjpeg-turbo-dev libldap libmcrypt-dev libpng-dev libtool libxml2-dev postgresql-dev unzip \
  && docker-php-ext-configure gd --with-freetype --with-jpeg \
  && docker-php-ext-configure pgsql -with-pgsql \
  && pecl install -o -f imagick \
  && docker-php-ext-enable imagick \
+ && pecl install -o -f redis \
+ && docker-php-ext-enable redis \
  && docker-php-ext-install calendar gd ldap mbstring mysqli intl xml pgsql soap zip opcache \
  && sed -i '/www-data/s#:[^:]*$#:/bin/ash#' /etc/passwd \
  && apk --purge del build-deps \
- && rm -fr /tmp/pear
+ && rm -fr /tmp/* /usr/share/php
 
 ARG PHP_TAG=7.4-fpm-alpine3.16
 FROM docker.io/library/php:${PHP_TAG} as source
@@ -58,7 +60,8 @@ ENV DOLI_DB_TYPE=mysqli	\
     DOLI_LDAP_ADMIN_PASS='' \
     DOLI_LDAP_DEBUG=false \
     DOLI_PROD=1 \
-    DOLI_NO_CSRF_CHECK=0
+    DOLI_NO_CSRF_CHECK=0 \
+    DOLI_REDIS_HOST=''
 
 WORKDIR /var/documents
 VOLUME /var/www /var/documents /app/conf
