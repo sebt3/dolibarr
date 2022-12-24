@@ -1,0 +1,196 @@
+---
+apiVersion: v1
+data:
+  username: YWRtaW4=
+  password: YWRtaW4=
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/instance: dolibarr-dolibarr
+    app.kubernetes.io/name: dolibarr
+    app.kubernetes.io/component: dolibarr
+  name: dolibarr
+type: Opaque
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app.kubernetes.io/instance: dolibarr-dolibarr
+    app.kubernetes.io/name: dolibarr
+    app.kubernetes.io/component: dolibarr
+  name: dolibarr
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: dolibarr-nginx-config
+  labels:
+    app.kubernetes.io/instance: dolibarr-dolibarr
+    app.kubernetes.io/name: dolibarr
+    app.kubernetes.io/component: nginx
+data:
+  nginx.conf: |
+    worker_processes  5;
+    events {
+    }
+    http {
+        include    /etc/nginx/mime.types;
+        server {
+            listen 80;
+            server_name ${NGINX_HOST};
+            root /var/www/htdocs;
+            index index.php;
+            access_log /var/log/nginx/access.log;
+            error_log /var/log/nginx/error.log;
+            location ~ [^/]\.php(/|$) {
+                # try_files $uri =404;
+                fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+                fastcgi_pass 127.0.0.1:9000;
+                fastcgi_index index.php;
+                include fastcgi_params;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_param PATH_INFO $fastcgi_path_info;
+            }
+            location / {
+                try_files $uri $uri/ index.php;
+            }
+            location /api {
+                if ( !-e $request_filename) {
+                    rewrite ^.* /api/index.php last;
+                }
+            }
+        }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: dolibarr-dolibarr
+    app.kubernetes.io/name: dolibarr
+    app.kubernetes.io/component: dolibarr
+  name: dolibarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: dolibarr-dolibarr
+      app.kubernetes.io/name: dolibarr
+      app.kubernetes.io/component: dolibarr
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: dolibarr-dolibarr
+        app.kubernetes.io/name: dolibarr
+        app.kubernetes.io/component: dolibarr
+    spec:
+      volumes:
+      - name: documents
+        persistentVolumeClaim:
+          claimName: dolibarr
+#      - name: php-lock
+#        emptyDir: {}
+      - name: nginx-run
+        emptyDir: {}
+      - name: nginx-cache
+        emptyDir: {}
+      - name: shared-files
+        emptyDir: {}
+      - name: nginx-config
+        configMap:
+          name: dolibarr-nginx-config
+      containers:
+      - name: dolibarr
+        image: registry:80/dolibarr:17.0
+        volumeMounts:
+#          - name: php-lock
+#            mountPath: /var/lock
+          - name: shared-files
+            mountPath: /var/www/
+          - name: documents
+            mountPath: /var/documents
+#        securityContext:
+#          runAsGroup: 82
+#          runAsNonRoot: true
+#          runAsUser: 82
+        env:
+        - name: DOLI_ADMIN_LOGIN
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: dolibarr
+        - name: DOLI_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: dolibarr
+      - name: nginx
+        image: nginx:alpine
+        securityContext:
+          runAsGroup: 82
+          runAsNonRoot: true
+          runAsUser: 82
+          readOnlyRootFilesystem: true
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+        volumeMounts:
+          - name: nginx-run
+            mountPath: /var/run
+          - name: nginx-cache
+            mountPath: /var/cache/nginx
+          - name: shared-files
+            mountPath: /var/www/
+          - name: nginx-config
+            mountPath: /etc/nginx/nginx.conf
+            subPath: nginx.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: dolibarr-dolibarr
+    app.kubernetes.io/name: dolibarr
+    app.kubernetes.io/component: dolibarr
+  name: dolibarr-web
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app.kubernetes.io/instance: dolibarr-dolibarr
+    app.kubernetes.io/name: dolibarr
+    app.kubernetes.io/component: dolibarr
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app.kubernetes.io/instance: dolibarr-dolibarr
+    app.kubernetes.io/name: dolibarr
+    app.kubernetes.io/component: dolibarr
+  name: dolibarr
+spec:
+  rules:
+  - host: dolibarr.dolibarr-dolibarr.home
+    http:
+      paths:
+      - backend:
+          service:
+            name: dolibarr-web
+            port:
+              number: 80
+        path: /
+        pathType: Prefix

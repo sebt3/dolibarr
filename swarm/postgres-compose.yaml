@@ -1,0 +1,53 @@
+version: '3.3'
+networks:
+  dolinet:
+volumes:
+  voldb:
+  voldata:
+  voldocuments:
+configs:
+  nginx:
+    file: nginx.conf
+
+services:
+  postgres:
+    image: postgres:alpine
+    environment:
+      POSTGRES_PASSWORD: dolibarr
+      POSTGRES_USER: dolibarr
+      POSTGRES_DB: dolibarr
+
+    volumes:
+      - voldb:/var/lib/postgresql/data
+    networks:
+    - dolinet
+
+  nginx:
+    image: nginx:alpine
+    configs:
+      - source: nginx
+        target: /etc/nginx/nginx.conf
+    volumes:
+      - voldata:/var/www
+    networks:
+      - dolinet
+    ports:
+      - "3200:80"
+
+  dolibarr:
+    image: dolibarr
+    depends_on:
+      - postgres
+      - nginx
+    environment:
+      DOLI_DB_HOST: postgres
+      DOLI_DB_PORT: 5432
+      DOLI_DB_TYPE: pgsql
+      DOLI_DB_PASSWORD: dolibarr
+      DOLI_ADMIN_PASSWORD: admin
+    networks:
+      - dolinet
+    volumes:
+      - voldata:/var/www
+      - voldocuments:/var/documents
+

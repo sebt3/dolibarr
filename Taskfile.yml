@@ -1,0 +1,25 @@
+version: '3'
+
+vars:
+  image_name: 'dolibarr'
+  repo: 'registry:80'
+  plateforms: linux/arm64/v8,linux/amd64
+  version:
+    sh: sed 's/,.*//' < .tags
+  docker_bin:
+    sh: "which docker || :"
+  podman_bin:
+    sh: "which podman || :"
+  kubectl_bin:
+    sh: "which kubectl || :"
+  buildkit_bin:
+    sh: "which kubectl-buildkit || :"
+  docker_cmd: '{{ eq .podman_bin "" | ternary .docker_bin .podman_bin }}'
+  #command: '{{ eq .buildkit_bin "" | ternary .docker_cmd .kubectl_bin }}'
+  command: '{{ eq .podman_bin "" | ternary .docker_bin .podman_bin }}'
+
+tasks:
+  default:
+    cmds:
+#      - '{{ .command }} build --platform "{{ .plateforms }}" -t "{{ .repo }}/{{ .image_name }}:{{ .version }}" .'
+      - '{{ .command }} build -t "{{ .repo }}/{{ .image_name }}:{{ .version }}" .'

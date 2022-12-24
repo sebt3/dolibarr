@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../base
+- postgresql.yaml
+
+patchesStrategicMerge:
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: dolibarr
+  spec:
+    template:
+      spec:
+        containers:
+        - name: dolibarr
+          env:
+          - name: DOLI_DB_HOST
+            value: "postgres"
+          - name: DOLI_DB_PORT
+            value: "5432"
+          - name: DOLI_DB_TYPE
+            value: "pgsql"
+          - name: DOLI_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: dolibarr-pg

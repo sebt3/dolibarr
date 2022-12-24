@@ -1,0 +1,51 @@
+version: '3.3'
+networks:
+  dolinet:
+volumes:
+  voldb:
+  voldata:
+  voldocuments:
+configs:
+  nginx:
+    file: nginx.conf
+
+services: 
+  maria:
+    image: mariadb:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dolibarr
+      MYSQL_USER: dolibarr
+      MYSQL_PASSWORD: dolibarr
+    volumes:
+      - voldb:/var/lib/mysql
+    networks:
+    - dolinet
+
+  nginx:
+    image: nginx:alpine
+    configs:
+      - source: nginx
+        target: /etc/nginx/nginx.conf
+    volumes:
+      - voldata:/var/www
+    networks:
+      - dolinet
+    ports:
+      - "3100:80"
+
+  dolibarr:
+    image: dolibarr
+    depends_on:
+      - maria
+      - nginx
+    environment:
+      DOLI_DB_HOST: maria
+      DOLI_DB_PASSWORD: dolibarr
+      DOLI_ADMIN_PASSWORD: admin
+    networks:
+      - dolinet
+    volumes:
+      - voldata:/var/www
+      - voldocuments:/var/documents
+

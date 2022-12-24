@@ -1,0 +1,21 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  labels:
+    app.kubernetes.io/instance: dolibarr-dolibarr
+    app.kubernetes.io/name: dolibarr
+    app.kubernetes.io/component: database
+  name: dolibarr-dolibarr
+spec:
+  teamId: "dolibarr"
+  volume:
+    size: 5Gi
+  numberOfInstances: 1
+  users:
+    dolibarr:
+    - superuser
+    - createdb
+  databases:
+    dolibarr: dolibarr
+  postgresql:
+    version: "14"
