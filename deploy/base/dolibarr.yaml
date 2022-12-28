@@ -141,6 +141,7 @@ spec:
           runAsGroup: 82
           runAsNonRoot: true
           runAsUser: 82
+          fsGroup: 82
         env:
         - name: DOLI_ADMIN_LOGIN
           valueFrom:
@@ -158,6 +159,7 @@ spec:
           runAsGroup: 82
           runAsNonRoot: true
           runAsUser: 82
+          fsGroup: 82
           readOnlyRootFilesystem: true
         ports:
         - name: http
@@ -204,6 +206,7 @@ spec:
               runAsGroup: 82
               runAsNonRoot: true
               runAsUser: 82
+              fsGroup: 82
             volumeMounts:
             - name: clamav
               mountPath: /var/lib/clamav
