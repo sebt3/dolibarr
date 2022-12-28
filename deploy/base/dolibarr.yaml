@@ -107,6 +107,10 @@ spec:
         app.kubernetes.io/name: dolibarr
         app.kubernetes.io/component: dolibarr
     spec:
+      securityContext:
+        runAsGroup: 82
+        runAsUser: 82
+        fsGroup: 82
       volumes:
       - name: documents
         persistentVolumeClaim:
@@ -138,10 +142,7 @@ spec:
           - name: clamav
             mountPath: /var/lib/clamav
         securityContext:
-          runAsGroup: 82
           runAsNonRoot: true
-          runAsUser: 82
-          fsGroup: 82
         env:
         - name: DOLI_ADMIN_LOGIN
           valueFrom:
@@ -156,10 +157,7 @@ spec:
       - name: nginx
         image: nginx:alpine
         securityContext:
-          runAsGroup: 82
           runAsNonRoot: true
-          runAsUser: 82
-          fsGroup: 82
           readOnlyRootFilesystem: true
         ports:
         - name: http
@@ -194,6 +192,10 @@ spec:
     spec:
       template:
         spec:
+          securityContext:
+            runAsGroup: 82
+            runAsUser: 82
+            fsGroup: 82
           restartPolicy: Never
           containers:
           - command:
@@ -203,10 +205,7 @@ spec:
             imagePullPolicy: IfNotPresent
             name: dolibarr-clamav
             securityContext:
-              runAsGroup: 82
               runAsNonRoot: true
-              runAsUser: 82
-              fsGroup: 82
             volumeMounts:
             - name: clamav
               mountPath: /var/lib/clamav
