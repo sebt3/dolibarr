@@ -54,14 +54,19 @@ spec:
           claimName: dolibarr-pg
       containers:
       - name: pg
-        image: postgres:12-alpine
+        image: postgres:15-alpine
         volumeMounts:
           - name: storage-volume
-            mountPath: /var/lib/postgresql
+            mountPath: /var/lib/postgresql/data
         ports:
         - name: sql
           containerPort: 5432
           protocol: TCP
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "$POSTGRES_USER", "-d", "$POSTGRES_DB"]
+          initialDelaySeconds: 20
+          periodSeconds: 5
         env:
         - name: POSTGRES_DB
           value: dolibarr
