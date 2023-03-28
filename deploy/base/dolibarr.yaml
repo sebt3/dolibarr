@@ -131,7 +131,7 @@ spec:
           name: dolibarr-nginx-config
       containers:
       - name: dolibarr
-        image: ghcr.io/sebt3/dolibarr:16.0.3
+        image: ghcr.io/sebt3/dolibarr:17.0.0
         volumeMounts:
 #          - name: php-lock
 #            mountPath: /var/lock
@@ -201,7 +201,7 @@ spec:
           - command:
             - /usr/bin/freshclam
             - --log=/proc/self/fd/1
-            image: ghcr.io/sebt3/dolibarr:16.0.3
+            image: ghcr.io/sebt3/dolibarr:17.0.0
             imagePullPolicy: IfNotPresent
             name: dolibarr-clamav
             securityContext:

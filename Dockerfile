@@ -30,6 +30,7 @@ RUN mkdir -p /target/app && sed 's/,.*//' /tmp/.tags >/target/app/version \
  && chown -R www-data:root /target/app \
  && chmod -R g=u /target/app \
  && sed -i '/.*\..*\..*/! s#$#.0#' /target/app/version \
+ && mkdir /target/docker-entrypoint.d \
  && /bin/echo -e "date.timezone = 'UTC'\nmemory_limit = 256M\nfile_uploads = On\nupload_max_filesize = 20M\npost_max_size = 20M\nmax_execution_time = 300\nsendmail_path = /usr/sbin/sendmail -t -i\nextension = calendar.so\n">/target/usr/local/etc/php/php.ini
 COPY entrypoint.sh /target/
 RUN chmod 755 /target/entrypoint.sh
