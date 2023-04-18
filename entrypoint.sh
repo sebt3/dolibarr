@@ -232,7 +232,7 @@ fi
 freshclam --log=/proc/self/fd/1 &
 
 for script in /docker-entrypoint.d/*.sh;do
-	bash "${script}"
+	ash "${script}"
 done
 
 exec "$@"
