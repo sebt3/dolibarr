@@ -4,15 +4,14 @@ VERSION=$(cat /app/version)
 
 # Check/create config file
 cp -Raf /app/htdocs /var/www/ 2>&1 | grep -v "preserve ownership"
-if [ -f /app/conf/conf.php ];then
-	chown www-data:www-data /app/conf/conf.php
-	chmod 660 /app/conf/conf.php
-	ln -sf /app/conf/conf.php /var/www/htdocs/conf.php
-else
-	ln -sf /var/documents/conf/conf.php /var/www/htdocs/conf/conf.php
-	if [ ! -e /var/documents/conf/conf.php ];then
-		mkdir -p /var/documents/conf
-		cat >/var/documents/conf/conf.php <<ENDFILE
+ln -sf /var/documents/conf/conf.php /var/www/htdocs/conf/conf.php
+if [ ! -e /var/documents/conf/conf.php ];then
+	echo " *** No configuration file found, creating"
+	mkdir -p /var/documents/conf
+	USE_AV=''
+	[ ${DOLI_USE_AV} -eq 0 ] && USE_AV='// '
+	[ -f /var/documents/conf/conf.php ] && chmod u+w /var/documents/conf/conf.php
+	cat >/var/documents/conf/conf.php <<ENDFILE
 <?php
 // Config file for Dolibarr ${VERSION} ($(date +%Y-%m-%dT%H:%M:%S%:z))
 // ###################
@@ -55,8 +54,8 @@ else
 \$dolibarr_nocsrfcheck='${DOLI_NO_CSRF_CHECK:="0"}';
 \$dolibarr_main_cookie_cryptkey='$(openssl rand -hex 32)';
 \$dolibarr_mailing_limit_sendbyweb='0';
-define('MAIN_ANTIVIRUS_COMMAND', '/usr/bin/clamdscan');
-define('MAIN_ANTIVIRUS_PARAM', '--fdpass');
+${USE_AV}define('MAIN_ANTIVIRUS_COMMAND', '/usr/bin/clamdscan');
+${USE_AV}define('MAIN_ANTIVIRUS_PARAM', '--fdpass');
 
 ENDFILE
 	fi
@@ -149,13 +148,14 @@ elif [[ ${DOLI_DB_TYPE} == "pgsql" ]];then
 		fi
 	done
 fi
-echo "Database ready to connect..."
+echo " *** Database ready to connect..."
 current="0.0.0"
 if [ -f /var/documents/install.version ]; then
 	# Upgrade database
 	current="$(cat /var/documents/install.version)"
 	upgrade
 else
+	echo " *** No known version *** Installing"
 	dbRun "SELECT * FROM llx_const"
 	if [ $? -ne 0 ]; then
 			cat > /var/www/htdocs/install/install.forced.php <<EOF
@@ -223,16 +223,27 @@ EOF
 		echo "${DOLI_DB_TYPE} is not supported by this install script"
 	fi
 fi
+chmod 440 /var/documents/conf/conf.php
+echo " *** Enforcing \"${DOLI_ADMIN_LOGIN:-"admin"}\" password"
+PASS=$(echo -n ${DOLI_ADMIN_PASSWORD:-"admin"} | md5sum | awk '{print $1}')
+dbRun "INSERT INTO llx_user (entity, login, pass_crypted, lastname, admin, statut) VALUES (0, '${DOLI_ADMIN_LOGIN:-"admin"}', '${PASS}', 'SuperAdmin', 1, 1) ON CONFLICT(entity, login) DO UPDATE SET pass_crypted='${PASS}';"
 
-[[ "x${DOLI_REDIS_HOST}" != "x" ]] && { 
+[[ "x${DOLI_REDIS_HOST}" != "x" ]] && {
     echo 'session.save_handler = redis';
     echo "session.save_path = ${DOLI_REDIS_HOST}";
 } >> /usr/local/etc/php/conf.d/docker-php-ext-redis.ini
 
-freshclam --log=/proc/self/fd/1 &
+[ ${DOLI_USE_AV} -eq 0 ] || freshclam --log=/proc/self/fd/1 &
 
-for script in /docker-entrypoint.d/*.sh;do
-	bash "${script}"
+for file in /docker-entrypoint.d/*.sh /docker-entrypoint.d/*.sql /docker-entrypoint.d/*.php;do
+	if [ -f "$file" ];then
+	echo " *** Starting $file :"
+	case "$file" in
+	*sh)  ash "$file";;
+	*sql) pgsqlRun -t < $file;;
+	*php) php "$file";;
+	esac
+	fi
 done
 
 exec "$@"
