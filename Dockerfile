@@ -17,7 +17,7 @@ RUN apk --update --no-cache --no-progress add curl ca-certificates clamav-clamds
 
 FROM alpine/git:2.40.1 as cloner
 WORKDIR /modules
-RUN mkdir -p /modules/custom/ modules/theme/ \
+RUN mkdir -p /modules/custom/ /modules/theme/ \
  && git clone https://github.com/cmfpmatik/dolib-theme-md-ux.git \
  && git clone -b 2.0_beta https://github.com/ATM-Consulting/dolibarr_module_samlconnector.git \
  && git clone -b 2.4 https://github.com/ATM-Consulting/dolibarr_module_bankimport.git \
