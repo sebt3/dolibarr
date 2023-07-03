@@ -58,11 +58,9 @@ ${USE_AV}define('MAIN_ANTIVIRUS_COMMAND', '/usr/bin/clamdscan');
 ${USE_AV}define('MAIN_ANTIVIRUS_PARAM', '--fdpass');
 
 ENDFILE
-	fi
-	chown www-data:www-data /var/documents/conf/conf.php
-	chmod 660 /var/documents/conf/conf.php
-
 fi
+chown www-data:www-data /var/documents/conf/conf.php
+chmod 660 /var/documents/conf/conf.php
 chown -R www-data:www-data /var/documents/
 
 
