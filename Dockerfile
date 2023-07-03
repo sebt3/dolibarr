@@ -2,7 +2,7 @@
 ARG PHP_TAG=8.1-fpm-alpine3.18
 FROM docker.io/library/php:${PHP_TAG} as build
 # hadolint ignore=DL3018,DL3019,SC2086
-RUN apk --update --no-cache --no-progress add curl ca-certificates clamav-clamdscan freshclam imagemagick freetype icu-libs icu-data-full libgomp libzip oniguruma krb5-server-ldap krb5-libs c-client libldap libpng libjpeg-turbo rsync ssmtp shadow mysql-client postgresql-client postgresql-libs pcre-dev \
+RUN apk --update --no-cache --no-progress add curl ca-certificates clamav-clamdscan freshclam jq imagemagick freetype icu-libs icu-data-full libgomp libzip oniguruma krb5-server-ldap krb5-libs c-client libldap libpng libjpeg-turbo rsync ssmtp shadow mysql-client postgresql-client postgresql-libs pcre-dev \
  && apk --update --no-cache --no-progress add --virtual build-deps ${PHPIZE_DEPS} imagemagick-dev libzip-dev oniguruma-dev krb5-dev openldap-dev autoconf curl-dev freetype-dev build-base  icu-dev libjpeg-turbo-dev libldap libmcrypt-dev libpng-dev libtool libxml2-dev postgresql-dev unzip \
  && docker-php-ext-configure gd --with-freetype --with-jpeg \
  && docker-php-ext-configure pgsql -with-pgsql \
