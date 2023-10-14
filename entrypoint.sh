@@ -7,7 +7,7 @@ cp -Raf /app/htdocs /var/www/ 2>&1 | grep -v "preserve ownership"
 ln -sf /var/documents/conf/conf.php /var/www/htdocs/conf/conf.php
 if [ ! -e /var/documents/conf/conf.php ];then
 	echo " *** No configuration file found, creating"
-	mkdir -p /var/documents/conf
+	mkdir -p /var/documents/conf /var/documents/custom
 	USE_AV=''
 	[ ${DOLI_USE_AV} -eq 0 ] && USE_AV='// '
 	[ -f /var/documents/conf/conf.php ] && chmod u+w /var/documents/conf/conf.php
@@ -20,7 +20,7 @@ if [ ! -e /var/documents/conf/conf.php ];then
 \$dolibarr_main_url_root='${DOLI_URL_ROOT:-"http://'.\$_SERVER['HTTP_HOST'].'/"}';
 \$dolibarr_main_document_root='/var/www/htdocs';
 \$dolibarr_main_url_root_alt='/custom';
-\$dolibarr_main_document_root_alt='/var/www/htdocs/custom';
+\$dolibarr_main_document_root_alt='/var/documents/custom';
 \$dolibarr_main_data_root='/var/documents';
 \$dolibarr_main_db_host='${DOLI_DB_HOST:="mariadb"}';
 \$dolibarr_main_db_port='${DOLI_DB_PORT}';
