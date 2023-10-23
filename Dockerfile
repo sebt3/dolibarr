@@ -1,5 +1,5 @@
 #ARG PHP_TAG=8.2.0-fpm-alpine3.17
-ARG PHP_TAG=8.1-fpm-alpine3.18
+ARG PHP_TAG=8.2-fpm-alpine3.18
 FROM docker.io/library/php:${PHP_TAG} as build
 # hadolint ignore=DL3018,DL3019,SC2086
 RUN apk --update --no-cache --no-progress add curl ca-certificates clamav-clamdscan freshclam jq imagemagick freetype icu-libs icu-data-full libgomp libzip oniguruma krb5-server-ldap krb5-libs c-client libldap libpng libjpeg-turbo rsync ssmtp shadow mysql-client postgresql-client postgresql-libs pcre-dev \
@@ -28,7 +28,7 @@ RUN mkdir -p /modules/custom/ /modules/theme/ \
  && mv /modules/dolibarr_module_abricot /modules/custom/abricot \
  && mv /modules/dolib-theme-md-ux /modules/theme/md-ux
 
-ARG PHP_TAG=8.1-fpm-alpine3.18
+ARG PHP_TAG=8.2-fpm-alpine3.18
 FROM docker.io/library/php:${PHP_TAG} as source
 RUN mkdir -p /target/app /target/usr/local/etc/php/
 COPY .tags /tmp/
